@@ -1,11 +1,13 @@
 """
-AniWatch/MegaCloud Extractor API for Vercel
+AniWatch/MegaCloud Extractor API for Vercel (Flask)
 """
 
 import json
 import re
 import urllib.request
-import urllib.error
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
 
 BASE_URL = "https://aniwatchtv.to"
 MEGACLOUD_BASE = "https://megacloud.blog"
@@ -29,7 +31,7 @@ def get(url, headers=None, params=None):
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             return resp.read().decode()
-    except Exception as e:
+    except:
         return None
 
 
@@ -145,25 +147,26 @@ def extract(slug, episode=1):
     }
 
 
-def handler(req, res):
-    """Vercel handler"""
-    query = {}
-    qs = req.query if hasattr(req, 'query') else ''
-    for pair in (qs or '').split('&'):
-        if '=' in pair:
-            k, v = pair.split('=', 1)
-            query[k] = v
-    
-    slug = query.get('slug', '')
-    episode = int(query.get('episode', 1))
+@app.route('/')
+def home():
+    return jsonify({
+        "name": "AniWatch/MegaCloud Extractor API",
+        "usage": "/api/extract?slug=anime-slug&episode=1",
+        "example": "/api/extract?slug=monster-37&episode=1"
+    })
+
+
+@app.route('/api/extract')
+def api_extract():
+    slug = request.args.get('slug', '')
+    episode = int(request.args.get('episode', 1))
     
     if not slug:
-        res.status = 400
-        res.header('Content-Type', 'application/json')
-        res.send(json.dumps({"success": False, "error": "Missing slug parameter. Use ?slug=anime-slug&episode=1"}))
-        return
+        return jsonify({"success": False, "error": "Missing slug parameter"}), 400
     
     result = extract(slug, episode)
-    res.status = 200 if result.get("success") else 404
-    res.header('Content-Type', 'application/json')
-    res.send(json.dumps(result))
+    return jsonify(result)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
