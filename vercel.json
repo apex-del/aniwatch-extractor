@@ -1,19 +1,14 @@
 {
-  "name": "aniwatch-megacloud-api",
-  "version": "1.0.0",
-  "description": "AniWatch/MegaCloud M3U8 Extraction API for V6.6.1",
-  "main": "api.py",
-  "scripts": {
-    "start": "python3 api.py",
-    "dev": "python3 -m uvicorn api:app --reload"
-  },
-  "dependencies": {
-    "curl_cffi": ">=0.6.0",
-    "requests": ">=2.28.0",
-    "uvicorn": ">=0.23.0",
-    "fastapi": ">=0.100.0"
-  },
-  "engines": {
-    "python": ">=3.9"
-  }
+  "builds": [
+    {
+      "src": "api.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api.py"
+    }
+  ]
 }
