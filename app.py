@@ -50,14 +50,26 @@ def get_episode_id(slug, episode=1):
 
 
 def get_servers(episode_id):
+    """Get available servers for episode with type (sub/dub) info"""
     html = get(f"{BASE_URL}/ajax/v2/episode/servers", HEADERS, {"episodeId": episode_id})
     if not html:
         return []
     try:
         data = json.loads(html)
         html = data.get("html", "")
-        servers = re.findall(r'data-id="(\d+)"[^>]*data-server-id="\d+"[^>]*>.*?<a[^>]*class="btn"[^>]*>([^<]+)</a>', html, re.DOTALL)
-        return [{"id": s[0], "name": s[1].strip()} for s in servers]
+        # Extract type (sub/dub), server id, and server name
+        items = re.findall(
+            r'<div[^>]*data-type="(sub|dub)"[^>]*data-id="(\d+)"[^>]*data-server-id="\d+"[^>]*>.*?<a[^>]*class="btn"[^>]*>([^<]+)</a>',
+            html, re.DOTALL
+        )
+        servers = []
+        for server_type, server_id, server_name in items:
+            servers.append({
+                "id": server_id,
+                "name": server_name.strip(),
+                "type": server_type
+            })
+        return servers
     except:
         return []
 
@@ -104,7 +116,14 @@ def extract_megacloud(embed_url):
     return None, []
 
 
-def extract(slug, episode=1):
+def extract(slug, episode=1, type="sub"):
+    """Extract M3U8 with type (sub/dub) support
+    
+    Args:
+        slug: Anime slug (e.g., 'monster-37')
+        episode: Episode number
+        type: 'sub' or 'dub'
+    """
     episode_id = get_episode_id(slug, episode)
     if not episode_id:
         return {"success": False, "error": "Episode not found"}
@@ -113,23 +132,46 @@ def extract(slug, episode=1):
     if not servers:
         return {"success": False, "error": "No servers found"}
     
+    # Filter servers by type
+    type_filtered = [s for s in servers if s.get("type") == type]
+    if type_filtered:
+        servers_to_use = type_filtered
+    else:
+        servers_to_use = servers  # Fallback to all if no filtered servers
+    
     embed_url = None
-    for server in servers:
+    used_server = None
+    
+    # Priority: MegaCloud > Mega > Cloud
+    for server in servers_to_use:
         if 'mega' in server["name"].lower():
             source = get_source(server["id"])
             if source:
                 embed_url = source
+                used_server = server
                 break
     
     if not embed_url:
-        for server in servers:
-            source = get_source(server["id"])
-            if source:
-                embed_url = source
-                break
+        for server in servers_to_use:
+            if 'cloud' in server["name"].lower():
+                source = get_source(server["id"])
+                if source:
+                    embed_url = source
+                    used_server = server
+                    break
     
     if not embed_url:
-        return {"success": False, "error": "No embed URL found"}
+        # Last resort: any server of requested type
+        for server in servers_to_use:
+            if server.get("type") == type:
+                source = get_source(server["id"])
+                if source:
+                    embed_url = source
+                    used_server = server
+                    break
+    
+    if not embed_url:
+        return {"success": False, "error": f"No {type} embed URL found"}
     
     m3u8_url, tracks = extract_megacloud(embed_url)
     
@@ -140,6 +182,8 @@ def extract(slug, episode=1):
         "success": True,
         "slug": slug,
         "episode": episode,
+        "type": type,
+        "server_type": used_server.get("type") if used_server else None,
         "m3u8_url": m3u8_url,
         "embed_url": embed_url,
         "episode_id": episode_id,
@@ -151,8 +195,11 @@ def extract(slug, episode=1):
 def home():
     return jsonify({
         "name": "AniWatch/MegaCloud Extractor API",
-        "usage": "/api/extract?slug=anime-slug&episode=1",
-        "example": "/api/extract?slug=monster-37&episode=1"
+        "usage": "/api/extract?slug=anime-slug&episode=1&type=sub",
+        "examples": [
+            "/api/extract?slug=monster-37&episode=1&type=sub",
+            "/api/extract?slug=monster-37&episode=1&type=dub"
+        ]
     })
 
 
@@ -160,11 +207,16 @@ def home():
 def api_extract():
     slug = request.args.get('slug', '')
     episode = int(request.args.get('episode', 1))
+    type_param = request.args.get('type', 'sub').lower()
+    
+    # Validate type parameter
+    if type_param not in ["sub", "dub"]:
+        return jsonify({"success": False, "error": "Type must be 'sub' or 'dub'"}), 400
     
     if not slug:
         return jsonify({"success": False, "error": "Missing slug parameter"}), 400
     
-    result = extract(slug, episode)
+    result = extract(slug, episode, type_param)
     return jsonify(result)
 
 
