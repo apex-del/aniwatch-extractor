@@ -99,13 +99,47 @@ Please respect the content creators and streaming services.
 pip install curl_cffi requests
 
 # 2. Run extractor
-python3 aniwatch_extractor.py <anime-slug> <episode>
+python3 aniwatch_extractor.py <anime-slug> <episode> [type]
 
-# Examples:
+# Examples - SUB (default):
 python3 aniwatch_extractor.py monster-37 1
 python3 aniwatch_extractor.py death-note-60 1
-python3 aniwatch_extractor.py code-geass-lelouch-of-the-rebellion-r2-17 1
+
+# Examples - DUB:
+python3 aniwatch_extractor.py monster-37 1 dub
+python3 aniwatch_extractor.py one-piece-100 1 dub
 ```
+
+---
+
+## 🎬 SUB & DUB SUPPORT
+
+You can now specify `sub` or `dub` to get the appropriate stream:
+
+| Type | Description |
+|------|-------------|
+| `sub` | Subbed version (original Japanese audio with subtitles) |
+| `dub` | Dubbed version (English/other language audio) |
+
+**CLI Examples:**
+```bash
+# Get SUB version (default)
+python3 aniwatch_extractor.py naruto-677 1 sub
+
+# Get DUB version
+python3 aniwatch_extractor.py naruto-677 1 dub
+```
+
+**API Examples:**
+```bash
+# Get SUB version
+curl "http://localhost:5000/api/extract?slug=monster-37&episode=1&type=sub"
+
+# Get DUB version  
+curl "http://localhost:5000/api/extract?slug=monster-37&episode=1&type=dub"
+```
+
+If the requested type is not available, the extractor will automatically try the other type as a fallback.
 
 ---
 

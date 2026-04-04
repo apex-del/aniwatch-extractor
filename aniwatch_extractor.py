@@ -261,12 +261,22 @@ class AniwatchExtractor:
             print(f"Megacloud extraction error: {e}")
             return None
 
-    def extract(self, anime_slug: str, episode: int = 1) -> Optional[Dict]:
-        """Main extraction method"""
+    def extract(self, anime_slug: str, episode: int = 1, type: str = "sub") -> Optional[Dict]:
+        """Main extraction method
+        
+        Args:
+            anime_slug: Anime slug (e.g., 'monster-37')
+            episode: Episode number (1, 2, 3, etc.)
+            type: Stream type - 'sub' for subtitles, 'dub' for dubbed audio
+            
+        Returns:
+            Dict with m3u8_url, tracks, success, etc.
+        """
         print(f"\n{'='*60}")
         print(f"AniWatch/MegaCloud Extractor")
         print(f"{'='*60}")
         print(f"Anime: {anime_slug}, Episode: {episode}")
+        print(f"Stream Type: {type.upper()}")
         print(f"Base URL: {self.base_url}")
         
         print("\n[1/4] Getting episode ID...")
@@ -283,18 +293,26 @@ class AniwatchExtractor:
             return None
         print(f"✅ Found {len(servers)} servers")
         
+        # Filter servers by type (sub/dub)
+        type_filtered = [s for s in servers if s.get("type") == type]
+        if type_filtered:
+            print(f"✅ Found {len(type_filtered)} {type.upper()} servers")
+            servers = type_filtered
+        
         print("\n[3/4] Getting MegaCloud embed URL...")
         embed_url = None
         source = None
+        used_server = None
         
-        # Priority: MegaCloud > Mega > Cloud > then others
+        # Priority: MegaCloud > Mega > Cloud > then others (within filtered type)
         for server in servers:
             name_lower = server["name"].lower()
             if "mega" in name_lower:
                 source = self.get_source(server["id"])
                 if source:
                     embed_url = source
-                    print(f"✅ Found {server['name']} (MegaCloud): {source[:60]}...")
+                    used_server = server
+                    print(f"✅ Found {server['name']} ({type.upper()}): {source[:60]}...")
                     break
         
         if not embed_url:
@@ -304,20 +322,41 @@ class AniwatchExtractor:
                     source = self.get_source(server["id"])
                     if source:
                         embed_url = source
-                        print(f"✅ Found {server['name']}: {source[:60]}...")
+                        used_server = server
+                        print(f"✅ Found {server['name']} ({type.upper()}): {source[:60]}...")
                         break
         
         if not embed_url:
+            # Fallback: try any server of the requested type
             for server in servers:
-                if server["type"] == "sub":
+                if server["type"] == type:
                     source = self.get_source(server["id"])
                     if source:
                         embed_url = source
-                        print(f"✅ Found {server['name']}: {source[:60]}...")
+                        used_server = server
+                        print(f"✅ Found {server['name']} ({type.upper()}): {source[:60]}...")
                         break
         
         if not embed_url:
-            print("❌ No megacloud embed URL found")
+            print(f"❌ No {type.upper()} megacloud embed URL found")
+            # Try opposite type as last resort
+            if type == "sub":
+                print("⚠️  Trying DUB servers as fallback...")
+                fallback = [s for s in servers if s.get("type") == "dub"]
+            else:
+                print("⚠️  Trying SUB servers as fallback...")
+                fallback = [s for s in servers if s.get("type") == "sub"]
+            
+            for server in fallback:
+                source = self.get_source(server["id"])
+                if source:
+                    embed_url = source
+                    used_server = server
+                    print(f"✅ Found {server['name']} (fallback): {source[:60]}...")
+                    break
+        
+        if not embed_url:
+            print("❌ No embed URL found")
             return None
         
         print("\n[4/4] Extracting M3U8...")
@@ -337,6 +376,7 @@ class AniwatchExtractor:
         print(f"M3U8 URL: {m3u8_url[:80]}...")
         
         return {
+            "success": True,
             "m3u8_url": m3u8_url,
             "sources": sources,
             "tracks": result.get("tracks", []),
@@ -344,6 +384,10 @@ class AniwatchExtractor:
             "outro": result.get("outro", {}),
             "embed_url": embed_url,
             "episode_id": episode_id,
+            "episode": episode,
+            "anime_slug": anime_slug,
+            "type": type,
+            "server_type": used_server.get("type") if used_server else None,
             "servers": servers
         }
 
@@ -354,20 +398,28 @@ def main():
 ╔═══════════════════════════════════════════════════════════════╗
 ║     AniWatch/MegaCloud M3U8 Extractor - V6.6.1          ║
 ╠═══════════════════════════════════════════════════════════════╣
-║  Usage: python aniwatch_extractor.py <slug> [episode]     ║
+║  Usage: python aniwatch_extractor.py <slug> [episode] [type]
 ║                                                               ║
 ║  Examples:                                                   ║
 ║    python aniwatch_extractor.py naruto-677 1                 ║
 ║    python aniwatch_extractor.py one-piece-100 1              ║
+║    python aniwatch_extractor.py one-piece-100 1 sub           ║
+║    python aniwatch_extractor.py one-piece-100 1 dub           ║
 ╚═══════════════════════════════════════════════════════════════╝
         """)
         sys.exit(1)
     
     anime_slug = sys.argv[1]
     episode = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+    type_param = sys.argv[3].lower() if len(sys.argv) > 3 else "sub"
+    
+    # Validate type
+    if type_param not in ["sub", "dub"]:
+        print("❌ Type must be 'sub' or 'dub'")
+        sys.exit(1)
     
     extractor = AniwatchExtractor()
-    result = extractor.extract(anime_slug, episode)
+    result = extractor.extract(anime_slug, episode, type_param)
     
     if result:
         print(f"""
@@ -375,6 +427,7 @@ def main():
 ║                    ✅ EXTRACTION SUCCESS                     ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  M3U8 URL: {result['m3u8_url'][:55]}
+║  Type: {result.get('type', 'N/A').upper()}
 ║  Intro: {result.get('intro', {}).get('start', 'N/A')}s - {result.get('intro', {}).get('end', 'N/A')}s
 ║  Outro: {result.get('outro', {}).get('start', 'N/A')}s - {result.get('outro', {}).get('end', 'N/A')}s
 ╚═══════════════════════════════════════════════════════════════╝
