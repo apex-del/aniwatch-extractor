@@ -74,7 +74,7 @@ Extract M3U8 streaming URLs from aniwatchtv.to which uses MegaCloud player.
 │   └──────────┘     └──────────┘     └──────────┘     └──────────┘       │
 │        │                │                │                │               │
 │        ▼                ▼                ▼                ▼               │
-│   aniwatchtv.to   aniwatchtv.to   megacloud.blog   megacloud.blog      │
+│   aniwatchtv.to   aniwatchtv.to   megacloud.tv   megacloud.tv      │
 │   /ajax/v2/       /ajax/v2/       /embed-2/       /getSources         │
 │   episode/list    episode/servers  v3/e-1/ID       + Deobfuscation       │
 │                                                                             │

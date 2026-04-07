@@ -69,7 +69,7 @@ This project is possible because of these amazing open-source projects:
 ### 📡 SOURCE SITES
 
 - **aniwatchtv.to** - Anime streaming site (uses MegaCloud player)
-- **megacloud.blog** - Video player/CDN provider
+- **megacloud.tv** - Video player/CDN provider
 - **hianimez.to** - Alternative domain
 - **anikai.to** - Alternative anime site
 

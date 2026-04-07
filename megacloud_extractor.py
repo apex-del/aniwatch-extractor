@@ -16,7 +16,7 @@ USAGE:
     from megacloud_extractor import Megacloud, make_request
     
     # Create extractor with megacloud embed URL
-    scraper = Megacloud("https://megacloud.blog/embed-2/v3/e-1/VIDEO_ID?k=1")
+    scraper = Megacloud("https://megacloud.tv/embed-2/v3/e-1/VIDEO_ID?k=1")
     
     # Extract M3U8
     result = scraper.extract()
@@ -440,11 +440,11 @@ class KeyTransform:
 class Megacloud:
     """Megacloud video source extractor"""
 
-    base_url = "https://megacloud.blog"
+    base_url = "https://megacloud.tv"
     headers = {
         "user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0",
-        "origin": base_url,
-        "referer": base_url + "/",
+        "origin": "https://megacloud.tv",
+        "referer": "https://megacloud.tv/",
     }
     BIGINT_NUMBERS = False
 
@@ -700,12 +700,12 @@ def extract_megacloud(embed_url):
 
 def test_megacloud():
     """Test megacloud extraction"""
-    test_url = "https://megacloud.blog/embed-2/v3/e-1/demo123?k=1"
+    test_url = "https://megacloud.tv/embed-2/v3/e-1/demo123?k=1"
     print("Testing Megacloud extractor...")
 
     embed_url = input("Enter megacloud embed URL: ").strip()
     if not embed_url:
-        embed_url = "https://megacloud.blog/embed-2/v3/e-1/demo123?k=1"
+        embed_url = "https://megacloud.tv/embed-2/v3/e-1/demo123?k=1"
 
     result = extract_megacloud(embed_url)
     if result:

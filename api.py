@@ -10,7 +10,7 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 BASE_URL = "https://aniwatchtv.to"
-MEGACLOUD_BASE = "https://megacloud.blog"
+MEGACLOUD_BASE = "https://megacloud.tv"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",

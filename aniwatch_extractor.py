@@ -74,7 +74,7 @@ class AniwatchExtractor:
         "https://hianime.vc",
     ]
 
-    MEGACLOUD_BASE = "https://megacloud.blog"
+    MEGACLOUD_BASE = "https://megacloud.tv"
     MEGACLOUD_HEADERS = {
         "user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0",
         "origin": MEGACLOUD_BASE,

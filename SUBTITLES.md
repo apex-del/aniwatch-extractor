@@ -102,12 +102,12 @@ https://mgstatics.xyz/subtitle/81e4c4862e5fe518758922ef1348cf2e/eng-2.vtt
 ```bash
 # Download all subtitles
 yt-dlp --write-subs --all-subs \
-       --headers "Referer: https://megacloud.blog/" \
+       --headers "Referer: https://megacloud.tv/" \
        "M3U8_URL"
 
 # Download specific language
 yt-dlp --write-subs --sub-lang en \
-       --headers "Referer: https://megacloud.blog/" \
+       --headers "Referer: https://megacloud.tv/" \
        "M3U8_URL"
 ```
 
@@ -158,4 +158,4 @@ Kenji is walking home from school...
 
 ---
 
-**Subtitles extracted from: MegaCloud (megacloud.blog)**
+**Subtitles extracted from: MegaCloud (megacloud.tv)**
